@@ -1,41 +1,44 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS  
 import joblib
 import pandas as pd
 import os
 
-# Load environment variables (optional)
-SECRET_KEY = os.getenv("SECRET_KEY")
-DB_URL = os.getenv("DATABASE_URL")
-
-# Initialize Flask app
 app = Flask(__name__)
+CORS(app)  
 
-# Check if model file exists
+# Load model
 MODEL_PATH = "house_price_predictor.pkl"
-if not os.path.exists(MODEL_PATH):
-    raise FileNotFoundError(f"Model file '{MODEL_PATH}' not found. Please upload it.")
+if os.path.exists(MODEL_PATH):
+    model = joblib.load(MODEL_PATH)
+else:
+    model = None
 
-# Load the trained model
-model = joblib.load(MODEL_PATH)
+# ✅ **Fix: Add a Home Route**
+@app.route("/", methods=["GET"])
+def home():
+    return jsonify({"message": "API is live!"})
 
-# API endpoint for prediction
+# ✅ **Fix: Handle Predictions Correctly**
 @app.route('/predict', methods=['POST'])
 def predict():
+    if model is None:
+        return jsonify({'error': 'Model not found'}), 500
+
     try:
-        # Get JSON data from request
         data = request.get_json()
+        
+        if not isinstance(data, dict):
+            return jsonify({'error': 'Invalid JSON format'}), 400
 
-        # Convert JSON data to DataFrame
-        new_data = pd.DataFrame(data)
-
-        # Predict house price
+        new_data = pd.DataFrame([data])
         predicted_price = model.predict(new_data)
 
         return jsonify({'predicted_price': f"${predicted_price[0]:,.2f}"})
     
     except Exception as e:
-        return jsonify({'error': str(e)}), 400  # Return error with 400 Bad Request status
+        return jsonify({'error': str(e)}), 400
 
-# Run the Flask app (production mode)
+# ✅ **Ensure app runs on Render's port**
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000)  # Set port to match Render logs
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 10000)), debug=True)

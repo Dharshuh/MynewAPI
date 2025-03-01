@@ -15,7 +15,7 @@ else:
     model = None
 
 # ✅ **Fix: Add a Home Route**
-@app.route('/predict', methods=['POST'])
+@app.route('/', methods=['GET'])
 
 def home():
     return jsonify({"message": "API is live!"})

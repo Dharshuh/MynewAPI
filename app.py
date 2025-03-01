@@ -2,6 +2,9 @@
 from flask import Flask, request, jsonify
 import joblib
 import pandas as pd
+import os
+SECRET_KEY = os.getenv("SECRET_KEY")
+DB_URL = os.getenv("DATABASE_URL")
 
 # Load the trained model
 model = joblib.load('house_price_predictor.pkl')
